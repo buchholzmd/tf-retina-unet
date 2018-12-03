@@ -5,7 +5,7 @@ from pre_processing import *
 
 def extract_patches(patch_height, patch_width, num_patches, inside=True):
     '''
-        This function extracts the sub-images of the pre-processd full images 
+        This function extracts the sub-images of the pre-processd full images
 
         Args:
           patch_height: int, height of patches
@@ -24,14 +24,21 @@ def extract_patches(patch_height, patch_width, num_patches, inside=True):
     train_masks = np.reshape(train_masks, (num_imgs, height, width, 1))
 
     #augment data and normalize ground truth pixel data
+    print("---------------------------------------")
+    print("Augmenting data")
+    print("---------------------------------------\n")
     train_imgs = augment_data(orig_train_imgs)
     train_grnd_truths = train_grnd_truths / 255
+    print("\tData augmentation complete\n")
 
     #cut bottom and top data is 565x565
     train_imgs = train_imgs[:,9:574,:,:]
     train_grnd_truths = train_grnd_truths[:,9:574,:,:]
 
     #extract patches
+    print("---------------------------------------")
+    print("Extracting patches")
+    print("---------------------------------------\n")
     patches = np.empty((num_patches, patch_height, patch_width, train_imgs.shape[3]))
     patches_gt = np.empty((num_patches, patch_height, patch_width, train_grnd_truths.shape[3]))
     img_height = train_imgs.shape[1]
@@ -65,6 +72,7 @@ def extract_patches(patch_height, patch_width, num_patches, inside=True):
             count += 1
             j += 1
 
+    print("\tPatch extraction complete\n")
     return patches, patches_gt
 
 def inside_FOV(x, y, height, width, patch):
@@ -76,3 +84,38 @@ def inside_FOV(x, y, height, width, patch):
     radius = np.sqrt(x_**2 + y_**2)
 
     return radius < inside_rad
+
+def prepare_grnd_truths(grnd_truths):
+    '''
+        This function prepares the ground-truth patches for evaluation of the model during training 
+
+        Args:
+          grnd_truths: numpy.array, 4D array of ground truth patches
+          
+        Returns:
+          new_gts: numpy.array, 3D array of ground truth patches (with correct shape)
+    '''
+    assert(len(grnd_truths.shape) == 4)
+    assert(grnd_truths.shape[3] == 1)
+    print("---------------------------------------")
+    print("Preparing ground truths for training")
+    print("---------------------------------------\n")
+    batches = grnd_truths.shape[0]
+    height = grnd_truths.shape[1]
+    width = grnd_truths.shape[2]
+    
+    grnd_truths = np.reshape(grnd_truths, (batches, height*width))
+    new_gts = np.empty((batches, height*width, 2))
+    
+    for i in range(batches):
+        for j in range(height*width):
+            if grnd_truths[i, j] == 0:
+                new_gts[i, j, 0] = 1
+                new_gts[i, j, 1] = 0
+            else:
+                new_gts[i, j, 0] = 0
+                new_gts[i, j, 1] = 1
+                
+    print("\tGround truth preparation complete\n")
+    return new_gts
+    
