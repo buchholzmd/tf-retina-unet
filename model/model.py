@@ -88,9 +88,9 @@ def conv2d(images, filters, bias, stride=(1,1)):
         Returns:
           tensorflow.nn.relu: tensorflow.Tensor, relu activated output Tensor for layer
     '''
-    images = tf.nn.conv2d(images, filters, strides=[1, stride[0], stride[1], 1], padding='SAME')
-    images = tf.nn.bias_add(images, bias)
-    return tf.nn.relu(images)
+    new_input = tf.nn.conv2d(images, filters, strides=[1, stride[0], stride[1], 1], padding='SAME')
+    new_input = tf.nn.bias_add(new_input, bias)
+    return tf.nn.relu(new_input)
 
 def maxpool2d(images, kernel_size=(2,2)):
     '''

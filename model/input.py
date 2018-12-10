@@ -19,7 +19,32 @@ num_imgs = 20
 height, width, channels = 584, 565, 3
 data_path = "./dataset"
 
-def get_data(image_dir, grnd_truth_dir, masks_dir, dataset="null"):
+def get_dataset(image_dir, grnd_truth_dir):
+    '''
+        This function gets the training/test data from its respective directory
+
+        Args:
+          image_dir: string, path to training/test images
+          grnd_truth_dir: string, path to training/test ground truths
+          
+        Returns:
+          raw_data: numpy.array, 4D array of training/test image data
+          grnd_truths: numpy.array, 3D array of training/test ground truths
+    '''
+    for path, subdirs, files in os.walk(image_dir):
+        #get original image data
+        raw_data = np.array([mpimg.imread(image_dir+files[i]) for i in range(len(files))])
+        #get corresponding ground truths
+        grnd_truths = np.array([mpimg.imread(grnd_truth_dir+files[i][0:2]+"_manual1.gif") for i in range(len(files))])
+
+
+    #verify dimesnions of data
+    assert(raw_data.shape == (num_imgs, height, width, channels))
+    assert(grnd_truths.shape == (num_imgs, height, width))
+
+    return raw_data, grnd_truths
+
+def get_masks(masks_dir, dataset="null"):
     '''
         This function gets the training/test data from its respective directory
 
@@ -34,23 +59,14 @@ def get_data(image_dir, grnd_truth_dir, masks_dir, dataset="null"):
           grnd_truths: numpy.array, 3D array of training/test ground truths
           masks: numpy.array, 3D array of training/test border masks
     '''
-    for path, subdirs, files in os.walk(image_dir):
-        #get original image data
-        raw_data = np.array([mpimg.imread(image_dir+files[i]) for i in range(len(files))])
-        #get corresponding ground truths
-        grnd_truths = np.array([mpimg.imread(grnd_truth_dir+files[i][0:2]+"_manual1.gif") for i in range(len(files))])
-        #get corresponding border masks
+    for path, subdirs, files in os.walk(masks_dir):
         if(dataset == "train"):
             masks = np.array([mpimg.imread(masks_dir+files[i][0:2]+"_training_mask.gif") for i in range(len(files))])
         elif(dataset == "test"):
             masks = np.array([mpimg.imread(masks_dir+files[i][0:2]+"_test_mask.gif") for i in range(len(files))])
         else:
             print("Must specify whether training or test dataset!")
-
-
-    #verify dimesnions of data
-    assert(raw_data.shape == (num_imgs, height, width, channels))
-    assert(grnd_truths.shape == (num_imgs, height, width))
-    assert(masks.shape == (num_imgs, height, width))
-
-    return raw_data, grnd_truths, masks
+        
+        
+        assert(masks.shape == (num_imgs, height, width))
+        return np.reshape(masks, (num_imgs, height, width, 1))
